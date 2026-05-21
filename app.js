@@ -4,9 +4,13 @@ const resetButton = document.getElementById('reset-button');
 const timerLabel = document.getElementById('timer-label');
 const sessionCounter = document.getElementById('session-counter');
 
+const WORK_DURATION_SECONDS = 25 * 60;
+let remainingSeconds = WORK_DURATION_SECONDS;
+let timerIntervalId = null;
+
 function initApp() {
   bindEventListeners();
-  updateDisplay(25, 0);
+  updateTimerDisplay(remainingSeconds);
   updateSessionCounter();
 }
 
@@ -25,7 +29,11 @@ function saveState() {
 }
 
 function startTimer() {
-  // TODO: start timer logic
+  if (timerIntervalId !== null) {
+    return;
+  }
+
+  timerIntervalId = setInterval(tick, 1000);
 }
 
 function pauseTimer() {
@@ -41,12 +49,27 @@ function switchMode(mode) {
 }
 
 function tick() {
-  // TODO: handle timer tick updates
+  if (remainingSeconds <= 0) {
+    return;
+  }
+
+  remainingSeconds -= 1;
+  updateTimerDisplay(remainingSeconds);
+
+  if (remainingSeconds === 0) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+    console.log('work complete');
+  }
 }
 
 function updateDisplay(minutes, seconds) {
   const formatted = formatTime(minutes * 60 + seconds);
   timerLabel.textContent = formatted;
+}
+
+function updateTimerDisplay(seconds) {
+  timerLabel.textContent = formatTime(seconds);
 }
 
 function updateProgress(elapsedSeconds, totalSeconds) {
