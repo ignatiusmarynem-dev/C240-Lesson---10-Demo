@@ -5,6 +5,7 @@ const timerLabel = document.getElementById('timer-label');
 const sessionCounter = document.getElementById('session-counter');
 
 const WORK_DURATION_SECONDS = 25 * 60;
+const BREAK_DURATION_SECONDS = 5 * 60;
 let remainingSeconds = WORK_DURATION_SECONDS;
 let timerIntervalId = null;
 const state = {
@@ -12,9 +13,12 @@ const state = {
   phase: 'work',
 };
 
+const phaseLabel = document.getElementById('phase-label');
+
 function initApp() {
   bindEventListeners();
   updateTimerDisplay(remainingSeconds);
+  updatePhaseDisplay();
   updateSessionCounter();
 }
 
@@ -60,11 +64,21 @@ function resetTimer() {
   remainingSeconds = WORK_DURATION_SECONDS;
   state.phase = 'work';
   state.isRunning = false;
+  updatePhaseDisplay();
   updateTimerDisplay(remainingSeconds);
 }
 
 function switchMode(mode) {
-  // TODO: switch between work and break modes
+  state.phase = mode;
+
+  if (mode === 'work') {
+    remainingSeconds = WORK_DURATION_SECONDS;
+  } else {
+    remainingSeconds = BREAK_DURATION_SECONDS;
+  }
+
+  updatePhaseDisplay();
+  updateTimerDisplay(remainingSeconds);
 }
 
 function tick() {
@@ -76,9 +90,8 @@ function tick() {
   updateTimerDisplay(remainingSeconds);
 
   if (remainingSeconds === 0) {
-    clearInterval(timerIntervalId);
-    timerIntervalId = null;
-    console.log('work complete');
+    const nextPhase = state.phase === 'work' ? 'break' : 'work';
+    switchMode(nextPhase);
   }
 }
 
@@ -97,6 +110,14 @@ function updateProgress(elapsedSeconds, totalSeconds) {
 
 function updateSessionCounter() {
   sessionCounter.textContent = 'Sessions completed: 0';
+}
+
+function updatePhaseDisplay() {
+  if (!phaseLabel) {
+    return;
+  }
+
+  phaseLabel.textContent = state.phase === 'work' ? 'Work' : 'Break';
 }
 
 function playTransitionSound() {
