@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="timer-card">
+      <h1>Pomodoro Timer</h1>
+      <div class="progress-ring" aria-label="Timer progress">
+        <span id="timer-label">25:00</span>
+      </div>
+      <div class="controls">
+        <button id="start-button" type="button">Start</button>
+        <button id="pause-button" type="button">Pause</button>
+        <button id="reset-button" type="button">Reset</button>
+      </div>
+      <p id="session-counter">Sessions completed: 0</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
