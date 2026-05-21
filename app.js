@@ -7,6 +7,10 @@ const sessionCounter = document.getElementById('session-counter');
 const WORK_DURATION_SECONDS = 25 * 60;
 let remainingSeconds = WORK_DURATION_SECONDS;
 let timerIntervalId = null;
+const state = {
+  isRunning: false,
+  phase: 'work',
+};
 
 function initApp() {
   bindEventListeners();
@@ -34,14 +38,29 @@ function startTimer() {
   }
 
   timerIntervalId = setInterval(tick, 1000);
+  state.isRunning = true;
 }
 
 function pauseTimer() {
-  // TODO: pause timer logic
+  if (timerIntervalId === null) {
+    return;
+  }
+
+  clearInterval(timerIntervalId);
+  timerIntervalId = null;
+  state.isRunning = false;
 }
 
 function resetTimer() {
-  // TODO: reset timer logic
+  if (timerIntervalId !== null) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
+
+  remainingSeconds = WORK_DURATION_SECONDS;
+  state.phase = 'work';
+  state.isRunning = false;
+  updateTimerDisplay(remainingSeconds);
 }
 
 function switchMode(mode) {
