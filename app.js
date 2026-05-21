@@ -1,6 +1,7 @@
 const startButton = document.getElementById('start-button');
 const pauseButton = document.getElementById('pause-button');
 const resetButton = document.getElementById('reset-button');
+const resetSessionsButton = document.getElementById('reset-sessions-button');
 const timerLabel = document.getElementById('timer-label');
 const sessionCounter = document.getElementById('session-counter');
 
@@ -8,6 +9,8 @@ const WORK_DURATION_SECONDS = 25 * 60;
 const BREAK_DURATION_SECONDS = 5 * 60;
 let remainingSeconds = WORK_DURATION_SECONDS;
 let timerIntervalId = null;
+let audioContext = null;
+let completedSessions = 0;
 const state = {
   isRunning: false,
   phase: 'work',
@@ -15,8 +18,17 @@ const state = {
 
 const phaseLabel = document.getElementById('phase-label');
 
+function getAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  return audioContext;
+}
+
 function initApp() {
   bindEventListeners();
+  loadSessionCount();
   updateTimerDisplay(remainingSeconds);
   updatePhaseDisplay();
   updateSessionCounter();
@@ -26,14 +38,17 @@ function bindEventListeners() {
   startButton.addEventListener('click', startTimer);
   pauseButton.addEventListener('click', pauseTimer);
   resetButton.addEventListener('click', resetTimer);
+  resetSessionsButton.addEventListener('click', resetSessions);
 }
 
-function loadState() {
-  // TODO: load persisted state from localStorage
+function loadSessionCount() {
+  const stored = localStorage.getItem('pomodoroSessions');
+  const parsed = parseInt(stored, 10);
+  completedSessions = Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function saveState() {
-  // TODO: save current state to localStorage
+function saveSessionCount() {
+  localStorage.setItem('pomodoroSessions', String(completedSessions));
 }
 
 function startTimer() {
@@ -41,6 +56,7 @@ function startTimer() {
     return;
   }
 
+  getAudioContext();
   timerIntervalId = setInterval(tick, 1000);
   state.isRunning = true;
 }
@@ -68,6 +84,12 @@ function resetTimer() {
   updateTimerDisplay(remainingSeconds);
 }
 
+function resetSessions() {
+  completedSessions = 0;
+  saveSessionCount();
+  updateSessionCounter();
+}
+
 function switchMode(mode) {
   state.phase = mode;
 
@@ -91,7 +113,13 @@ function tick() {
 
   if (remainingSeconds === 0) {
     const nextPhase = state.phase === 'work' ? 'break' : 'work';
+    if (state.phase === 'work') {
+      completedSessions += 1;
+      saveSessionCount();
+      updateSessionCounter();
+    }
     switchMode(nextPhase);
+    playTransitionSound(nextPhase);
   }
 }
 
@@ -109,7 +137,7 @@ function updateProgress(elapsedSeconds, totalSeconds) {
 }
 
 function updateSessionCounter() {
-  sessionCounter.textContent = 'Sessions completed: 0';
+  sessionCounter.textContent = `Sessions: ${completedSessions}`;
 }
 
 function updatePhaseDisplay() {
@@ -120,8 +148,29 @@ function updatePhaseDisplay() {
   phaseLabel.textContent = state.phase === 'work' ? 'Work' : 'Break';
 }
 
-function playTransitionSound() {
-  // TODO: play sound on mode transition
+function playTransitionSound(phase) {
+  const ctx = getAudioContext();
+  const oscillator = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+  const frequency = phase === 'break' ? 440 : 660;
+  const duration = 0.2;
+  const now = ctx.currentTime;
+
+  oscillator.type = 'sine';
+  oscillator.frequency.value = frequency;
+
+  gainNode.gain.setValueAtTime(0.0001, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+  oscillator.connect(gainNode).connect(ctx.destination);
+  oscillator.start(now);
+  oscillator.stop(now + duration);
+
+  oscillator.onended = () => {
+    oscillator.disconnect();
+    gainNode.disconnect();
+  };
 }
 
 function formatTime(seconds) {
